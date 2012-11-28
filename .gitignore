@@ -1,0 +1,6 @@
+*.swp
+*.swo
+*.swn
+*.db
+*.log
+build/
