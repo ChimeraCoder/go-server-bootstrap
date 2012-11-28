@@ -38,6 +38,7 @@ func serveProfile(w http.ResponseWriter, r *http.Request, c *Credentials){
 
 func serveLogin(w http.ResponseWriter,  r *http.Request) {
     switch {
+        //TODO use oauth library to simplify the following
         //Only serve GET requests
         case r.Method == "GET": {
             vals, err := url.ParseQuery(r.URL.RawQuery)
