@@ -120,39 +120,30 @@ func serveLogin(w http.ResponseWriter,  r *http.Request) {
             vals, err := url.ParseQuery(r.URL.RawQuery)
             if err != nil {panic (err)}
             code := vals.Get("code")
-            log.Printf("Received code %s", code)
             v := url.Values{}
             v.Set("code", code)
             v.Set("app_id", APP_ID)
             v.Set("app_secret", APP_SECRET)
-            log.Printf("Sending %v", v)
             response, err := http.PostForm("https://clef.io/api/authorize", v)
-            log.Printf("received : %v", response)
-            log.Printf("received header %+v", response.Header)
-            log.Printf("received access_token %v", response.Header.Get("access_token"))
 
             if err != nil {
                 panic(err)
             } else{
                 bits, err := ioutil.ReadAll(response.Body)
                 if err != nil { panic(err)}
-                log.Printf("Found %s", string(bits))
                 result := make(map[string]interface{})
                 json.Unmarshal(bits, &result)
                 access_token, ok := result["access_token"].(string)
                 if !ok {
-                    log.Print("Something funky happened here %v", result)
+                    log.Print("Something funky happened here: %v", result)
                 }
 
                 v := url.Values{}
                 v.Set("access_token", access_token)
                 response, err  := http.PostForm("https://clef.io/api/info",v)
                 if err != nil { panic(err)}
-                log.Printf("received next %v", response)
-                log.Printf("received body %v", response.Header.Get("body"))
                 bits, err = ioutil.ReadAll(response.Body)
                 if err != nil { panic(err)}
-                log.Printf("Found %s", string(bits))
                 err = json.Unmarshal(bits, &result)
                 
                 //Set a cookie that is valid for 24 hours
