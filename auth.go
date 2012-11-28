@@ -65,13 +65,11 @@ func (h *authHandler) ServeHTTP(w http.ResponseWriter, r *http.Request){
             err := getCookie(r, "auth", &cookie)
             if err == nil {
                 //Found a cookie
-                log.Print("Found cookie! %v", cookie)
 
                 login := authcookie.Login(cookie, COOKIE_SECRET)
                 if login != "" {
                     //access for login granted
                     log.Print("Access granted! Redirecting...")
-                    log.Printf("Cookie was %s", login)
 
                     h.handler(w, r, &Credentials{login})
                     return
