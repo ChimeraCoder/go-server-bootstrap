@@ -55,12 +55,12 @@ func serveLogin(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				panic(err)
 			} else {
-				bits, err := ioutil.ReadAll(response.Body)
+				bts, err := ioutil.ReadAll(response.Body)
 				if err != nil {
 					panic(err)
 				}
 				result := make(map[string]interface{})
-				json.Unmarshal(bits, &result)
+				json.Unmarshal(bts, &result)
 				access_token, ok := result["access_token"].(string)
 				if !ok {
 					log.Print("Something funky happened here: %v", result)
@@ -72,11 +72,11 @@ func serveLogin(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					panic(err)
 				}
-				bits, err = ioutil.ReadAll(response.Body)
+				bts, err = ioutil.ReadAll(response.Body)
 				if err != nil {
 					panic(err)
 				}
-				err = json.Unmarshal(bits, &result)
+				err = json.Unmarshal(bts, &result)
 
 				//Set a cookie that is valid for 24 hours
 				cookie := authcookie.NewSinceNow(access_token, 24*time.Hour, COOKIE_SECRET)
