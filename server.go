@@ -4,13 +4,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/dchest/authcookie"
+    "github.com/gorilla/sessions"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"text/template"
-	"time"
 )
 
 const BCRYPT_COST = 12
@@ -18,6 +17,7 @@ const BCRYPT_COST = 12
 var (
 	httpAddr        = flag.String("addr", ":8000", "HTTP server address")
 	baseTmpl string = "templates/base.tmpl"
+    store = sessions.NewCookieStore([]byte(COOKIE_SECRET))
 
 	//The following three variables can be defined using environment variables
 	//to avoid committing them by mistake
@@ -27,8 +27,9 @@ var (
 	//COOKIE_SECRET = []byte(os.Getenv("COOKIE_SECRET"))
 	//APP_ID = os.Getenv("APP_ID")
 	//APP_SECRET = os.Getenv("APP_SECRET")
-
 )
+
+const PROFILE_SESSION = "profile"
 
 func serveProfile(w http.ResponseWriter, r *http.Request, c *Credentials) {
 	fmt.Fprint(w, "This is where the user's profile information goes!")
@@ -77,10 +78,11 @@ func serveLogin(w http.ResponseWriter, r *http.Request) {
 					panic(err)
 				}
 				err = json.Unmarshal(bts, &result)
+                log.Printf("Result: %v", result)
 
-				//Set a cookie that is valid for 24 hours
-				cookie := authcookie.NewSinceNow(access_token, 24*time.Hour, COOKIE_SECRET)
-				addCookie(w, "auth", cookie, 24*time.Hour)
+                session, _ := store.Get(r, PROFILE_SESSION)
+                session.Values["access_token"] = access_token
+                session.Save(r,w)
 
 				//http.StatusFound is just an integer, so you can specify 302 directly
 				http.Redirect(w, r, "/profile", http.StatusFound)
@@ -102,7 +104,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 	} else {
 		//You may want to refactor this, but this is how template inheritance works in Go
 		s1, _ := template.ParseFiles("templates/base.tmpl", "templates/index.tmpl")
-		s1.ExecuteTemplate(w, "base", nil)
+        s1.ExecuteTemplate(w, "base", map[string]string{"APP_ID" : APP_ID})
 	}
 }
 
