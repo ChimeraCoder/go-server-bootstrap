@@ -130,7 +130,14 @@ func serveRegister(w http.ResponseWriter, r *http.Request) {
 			}
 			user.Password = string(password_hashed)
 
-            //TODO store user in chosen database
+			//Store user in database - in this case, mongodb
+			//Swap out for your database of choice as needed
+			if err := withCollection("users", func(c *mgo.Collection) error {
+				return c.Insert(&user)
+			}); err != nil {
+				//Return an error if the database query failed
+				http.Error(w, "Internal error", http.StatusInternalServerError)
+			}
 		}
 
 	default:
