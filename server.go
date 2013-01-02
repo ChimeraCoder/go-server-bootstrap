@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/gorilla/sessions"
 	"io/ioutil"
+	"labix.org/v2/mgo"
 	"log"
 	"net/http"
 	"net/url"
@@ -33,7 +34,6 @@ var (
 	//APP_ID = os.Getenv("APP_ID")
 	//APP_SECRET = os.Getenv("APP_SECRET")
 )
-
 
 func serveProfile(w http.ResponseWriter, r *http.Request, c *Credentials) {
 	fmt.Fprint(w, "This is where the user's profile information goes!")
@@ -110,7 +110,7 @@ func serveRegister(w http.ResponseWriter, r *http.Request) {
 
 	case "POST":
 		{
-            //Create a User struct, though it will still need to be validated
+			//Create a User struct, though it will still need to be validated
 			_ = r.ParseForm()
 			values := r.Form
 			user := new(User)
@@ -153,6 +153,18 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	var err error
+
+	//Initialize mongodb connection, assuming mongo.go is present
+	//If you are using another database setup, swap out this section
+	mongodb_session, err = mgo.Dial(MONGODB_URL)
+	if err != nil {
+		panic(err)
+	}
+	mongodb_session.SetMode(mgo.Monotonic, true)
+	mongodb_session.EnsureSafe(&mgo.Safe{1, "", 0, true, false})
+	defer mongodb_session.Close()
+
 	http.HandleFunc("/", serveHome)
 	http.HandleFunc("/login", serveLogin)
 	http.HandleFunc("/register", serveRegister)
