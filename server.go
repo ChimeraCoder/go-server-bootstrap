@@ -43,65 +43,54 @@ func serveProfile(w http.ResponseWriter, r *http.Request, c *Credentials) {
 }
 
 func serveCallback(w http.ResponseWriter, r *http.Request) {
-	switch {
 	//TODO use oauth library to simplify the following
-	//Only serve GET requests
-	case r.Method == "GET":
-		{
-			log.Print("Clef login")
-			vals, err := url.ParseQuery(r.URL.RawQuery)
-			if err != nil {
-				panic(err)
-			}
-			code := vals.Get("code")
-			v := url.Values{}
-			v.Set("code", code)
-			v.Set("app_id", APP_ID)
-			v.Set("app_secret", APP_SECRET)
-			response, err := http.PostForm("https://clef.io/api/authorize", v)
+	log.Print("Clef login")
+	vals, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		panic(err)
+	}
+	code := vals.Get("code")
+	v := url.Values{}
+	v.Set("code", code)
+	v.Set("app_id", APP_ID)
+	v.Set("app_secret", APP_SECRET)
+	response, err := http.PostForm("https://clef.io/api/authorize", v)
 
-			if err != nil {
-				panic(err)
-			} else {
-				bts, err := ioutil.ReadAll(response.Body)
-				if err != nil {
-					panic(err)
-				}
-				result := make(map[string]interface{})
-				json.Unmarshal(bts, &result)
-				log.Print(result)
-				access_token, ok := result["access_token"].(string)
-				if !ok {
-					log.Print("Something funky happened here: %v", result)
-				}
-
-				v := url.Values{}
-				v.Set("access_token", access_token)
-				response, err := http.PostForm("https://clef.io/api/info", v)
-				if err != nil {
-					panic(err)
-				}
-				bts, err = ioutil.ReadAll(response.Body)
-				if err != nil {
-					panic(err)
-				}
-				err = json.Unmarshal(bts, &result)
-				log.Printf("Result: %v", result)
-
-				session, _ := store.Get(r, PROFILE_SESSION)
-				//session.Values["userid"] = access_token
-				session.Values["access_token"] = access_token
-				session.Save(r, w)
-
-				//http.StatusFound is just an integer, so you can specify 302 directly
-				http.Redirect(w, r, "/profile", http.StatusFound)
-			}
+	if err != nil {
+		panic(err)
+	} else {
+		bts, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			panic(err)
 		}
-	//Return an error for all other HTTP methods
-	default:
-		{
-			http.Error(w, "Method not supported", http.StatusMethodNotAllowed)
+		result := make(map[string]interface{})
+		json.Unmarshal(bts, &result)
+		log.Print(result)
+		access_token, ok := result["access_token"].(string)
+		if !ok {
+			log.Print("Something funky happened here: %v", result)
 		}
+
+		v := url.Values{}
+		v.Set("access_token", access_token)
+		response, err := http.PostForm("https://clef.io/api/info", v)
+		if err != nil {
+			panic(err)
+		}
+		bts, err = ioutil.ReadAll(response.Body)
+		if err != nil {
+			panic(err)
+		}
+		err = json.Unmarshal(bts, &result)
+		log.Printf("Result: %v", result)
+
+		session, _ := store.Get(r, PROFILE_SESSION)
+		//session.Values["userid"] = access_token
+		session.Values["access_token"] = access_token
+		session.Save(r, w)
+
+		//http.StatusFound is just an integer, so you can specify 302 directly
+		http.Redirect(w, r, "/profile", http.StatusFound)
 	}
 }
 
@@ -225,7 +214,7 @@ func main() {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/", serveHome)
-	r.HandleFunc("/callback", serveCallback)
+	r.HandleFunc("/callback", serveCallback).Methods("GET")
 	r.HandleFunc("/register", serveRegister)
 	r.HandleFunc("/login", serveLogin)
 	r.Handle("/profile", &authHandler{serveProfile, false})
