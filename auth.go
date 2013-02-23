@@ -6,7 +6,8 @@ import (
 )
 
 type Credentials struct {
-	UserId string
+	UserId      string //Must be non-empty for ALL valid login (OAuth or password)
+	AccessToken string //Will be non-empty only for OAuth-based login
 	//etc.
 }
 
@@ -19,23 +20,27 @@ type authHandler struct {
 func (h *authHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	//Check if they are already logged in
 
-    session, err := store.Get(r, PROFILE_SESSION)
-    if err != nil{
-        panic(err)
-    }
+	session, err := store.Get(r, PROFILE_SESSION)
+	if err != nil {
+		panic(err)
+	}
 
-    //If no value is found, this string assertion will fail
-    access_token, ok := session.Values["access_token"].(string)
-    if ok && access_token != ""{
-        //access for login granted
-        log.Print("Access granted! Redirecting... ")
+	//If no value is found, this string assertion will fail
+	userid, ok := session.Values["userid"].(string)
+	if ok && userid != "" {
+		//access for login granted
 
-        h.handler(w, r, &Credentials{access_token})
-        return
-    } else{
-        log.Print("Access denied")
+		//fetch the access token if it exists
+		access_token, ok := session.Values["access_token"].(string)
+		if !ok {
+			access_token = ""
+		}
 
-        http.Redirect(w, r, "/", 302)
-    }
+		h.handler(w, r, &Credentials{userid, access_token})
+		return
+	} else {
+		log.Print("Access denied")
+		http.Redirect(w, r, "/", 302)
+	}
 
 }

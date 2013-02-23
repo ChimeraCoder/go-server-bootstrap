@@ -1,0 +1,24 @@
+{{define "body"}}
+<p>
+   This is just a placeholder
+                  
+   <div id="login">
+        <form action="/login" method="POST">
+            <ol>
+                <li>
+                <label for="Email">E-mail</label>
+                <input type="email" name="Email">
+                </li>
+
+                <li>
+                <label for="Password">Password</label>
+                <input type="password" name="Password">
+                </li>
+            </ol>
+            <button class="btn btn-primary" type="submit">Log in</button>
+        </form>
+   </div>
+
+<p>
+{{end}}
+

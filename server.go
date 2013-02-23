@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/sessions"
 	"io/ioutil"
 	"labix.org/v2/mgo"
+	"labix.org/v2/mgo/bson"
 	"log"
 	"net/http"
 	"net/url"
@@ -22,8 +23,8 @@ const PROFILE_SESSION = "profile"
 var (
 	httpAddr        = flag.String("addr", ":8000", "HTTP server address")
 	baseTmpl string = "templates/base.tmpl"
-	store           = sessions.NewCookieStore([]byte(COOKIE_SECRET))
-	decoder         = schema.NewDecoder() //From github.com/gorilla/schema
+	store           = sessions.NewCookieStore([]byte(COOKIE_SECRET)) //CookieStore uses secure cookies
+	decoder         = schema.NewDecoder()                            //From github.com/gorilla/schema
 
 	//The following three variables can be defined using environment variables
 	//to avoid committing them by mistake
@@ -40,12 +41,13 @@ func serveProfile(w http.ResponseWriter, r *http.Request, c *Credentials) {
 	return
 }
 
-func serveLogin(w http.ResponseWriter, r *http.Request) {
+func serveCallback(w http.ResponseWriter, r *http.Request) {
 	switch {
 	//TODO use oauth library to simplify the following
 	//Only serve GET requests
 	case r.Method == "GET":
 		{
+			log.Print("Clef login")
 			vals, err := url.ParseQuery(r.URL.RawQuery)
 			if err != nil {
 				panic(err)
@@ -66,6 +68,7 @@ func serveLogin(w http.ResponseWriter, r *http.Request) {
 				}
 				result := make(map[string]interface{})
 				json.Unmarshal(bts, &result)
+				log.Print(result)
 				access_token, ok := result["access_token"].(string)
 				if !ok {
 					log.Print("Something funky happened here: %v", result)
@@ -85,6 +88,7 @@ func serveLogin(w http.ResponseWriter, r *http.Request) {
 				log.Printf("Result: %v", result)
 
 				session, _ := store.Get(r, PROFILE_SESSION)
+				//session.Values["userid"] = access_token
 				session.Values["access_token"] = access_token
 				session.Save(r, w)
 
@@ -98,6 +102,57 @@ func serveLogin(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Method not supported", http.StatusMethodNotAllowed)
 		}
 	}
+}
+
+func serveLogin(w http.ResponseWriter, r *http.Request) {
+
+	switch r.Method {
+	case "GET":
+		{
+			s1, _ := template.ParseFiles("templates/base.tmpl", "templates/login.tmpl")
+			s1.ExecuteTemplate(w, "base", nil)
+		}
+	case "POST":
+		{
+			_ = r.ParseForm()
+			values := r.Form
+			user := new(User)
+			decoder.Decode(user, values)
+			email := user.Email
+			password := user.Password
+			full_user, err := comparePassword(email, password)
+			if err != nil {
+				log.Printf("Error fetching user: %v", err)
+				s1, _ := template.ParseFiles("templates/base.tmpl", "templates/login.tmpl")
+				s1.ExecuteTemplate(w, "base", "Error fetching user")
+				return
+			}
+
+			session, _ := store.Get(r, PROFILE_SESSION)
+			session.Values["userid"] = full_user.Email
+			session.Save(r, w)
+			http.Redirect(w, r, "/profile", http.StatusFound)
+		}
+
+	}
+}
+
+//Fetch the user from the database and check if the passwords match
+//If the passwords do not match, return a nil pointer, not a user struct
+func comparePassword(email string, candidate_password string) (user *User, err error) {
+	user = new(User)
+	err = withCollection("users", func(c *mgo.Collection) error {
+		return c.Find(bson.M{"email": email}).One(user)
+	})
+	if err != nil {
+		user = nil
+		return
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(candidate_password))
+	if err != nil {
+		user = nil
+	}
+	return
 }
 
 func serveRegister(w http.ResponseWriter, r *http.Request) {
@@ -173,8 +228,9 @@ func main() {
 	defer mongodb_session.Close()
 
 	http.HandleFunc("/", serveHome)
-	http.HandleFunc("/login", serveLogin)
+	http.HandleFunc("/callback", serveCallback)
 	http.HandleFunc("/register", serveRegister)
+	http.HandleFunc("/login", serveLogin)
 	http.Handle("/profile", &authHandler{serveProfile, false})
 	http.Handle("/static/", http.FileServer(http.Dir("public")))
 
