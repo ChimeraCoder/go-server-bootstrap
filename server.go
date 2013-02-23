@@ -204,15 +204,9 @@ func serveRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveHome(w http.ResponseWriter, r *http.Request) {
-	//The "/" path will be matched by default, so we need to check for a 404 error
-	//you can use mux or something similar to refactor this part
-	if r.URL.Path != "/" {
-		http.Error(w, "Not Found", http.StatusNotFound)
-	} else {
-		//You may want to refactor this, but this is how template inheritance works in Go
-		s1, _ := template.ParseFiles("templates/base.tmpl", "templates/index.tmpl")
-		s1.ExecuteTemplate(w, "base", map[string]string{"APP_ID": APP_ID})
-	}
+	//You may want to refactor this, but this is how template inheritance works in Go
+	s1, _ := template.ParseFiles("templates/base.tmpl", "templates/index.tmpl")
+	s1.ExecuteTemplate(w, "base", map[string]string{"APP_ID": APP_ID})
 }
 
 func main() {
