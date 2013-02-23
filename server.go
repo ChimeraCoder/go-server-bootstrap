@@ -99,8 +99,8 @@ func serveLogin(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		{
-			s1, _ := template.ParseFiles("templates/base.tmpl", "templates/login.tmpl")
-			s1.ExecuteTemplate(w, "base", nil)
+			renderTemplate(w, "base", nil, "templates/base.tmpl", "templates/login.tmpl")
+			return
 		}
 	case "POST":
 		{
@@ -125,6 +125,11 @@ func serveLogin(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
+}
+
+func renderTemplate(w http.ResponseWriter, name string, data interface{}, filenames ...string) {
+	s1, _ := template.ParseFiles(filenames...)
+	s1.ExecuteTemplate(w, name, data)
 }
 
 //Fetch the user from the database and check if the passwords match
@@ -193,7 +198,7 @@ func serveRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveHome(w http.ResponseWriter, r *http.Request) {
-	//You may want to refactor this, but this is how template inheritance works in Go
+	//You may want to refactor this, as in renderTemplate, but this is how template inheritance works in Go
 	s1, _ := template.ParseFiles("templates/base.tmpl", "templates/index.tmpl")
 	s1.ExecuteTemplate(w, "base", map[string]string{"APP_ID": APP_ID})
 }
