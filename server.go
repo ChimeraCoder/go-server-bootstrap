@@ -229,7 +229,7 @@ func main() {
 	r.HandleFunc("/register", serveRegister)
 	r.HandleFunc("/login", serveLogin)
 	r.Handle("/profile", &authHandler{serveProfile, false})
-	r.Handle("/static/", http.FileServer(http.Dir("public")))
+	http.Handle("/static/", http.FileServer(http.Dir("public")))
 	http.Handle("/", r)
 
 	if err := http.ListenAndServe(*httpAddr, nil); err != nil {
