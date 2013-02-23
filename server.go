@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	"github.com/gorilla/sessions"
 	"io/ioutil"
@@ -227,12 +228,15 @@ func main() {
 	mongodb_session.EnsureSafe(&mgo.Safe{1, "", 0, true, false})
 	defer mongodb_session.Close()
 
-	http.HandleFunc("/", serveHome)
-	http.HandleFunc("/callback", serveCallback)
-	http.HandleFunc("/register", serveRegister)
-	http.HandleFunc("/login", serveLogin)
-	http.Handle("/profile", &authHandler{serveProfile, false})
-	http.Handle("/static/", http.FileServer(http.Dir("public")))
+	r := mux.NewRouter()
+
+	r.HandleFunc("/", serveHome)
+	r.HandleFunc("/callback", serveCallback)
+	r.HandleFunc("/register", serveRegister)
+	r.HandleFunc("/login", serveLogin)
+	r.Handle("/profile", &authHandler{serveProfile, false})
+	r.Handle("/static/", http.FileServer(http.Dir("public")))
+	http.Handle("/", r)
 
 	if err := http.ListenAndServe(*httpAddr, nil); err != nil {
 		log.Fatalf("Error listening, %v", err)
