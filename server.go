@@ -37,6 +37,17 @@ var (
 	//APP_SECRET = os.Getenv("APP_SECRET")
 )
 
+func renderTemplate(w http.ResponseWriter, name string, data interface{}, filenames ...string) {
+	s1, _ := template.ParseFiles(filenames...)
+	s1.ExecuteTemplate(w, name, data)
+}
+
+func serveHome(w http.ResponseWriter, r *http.Request) {
+	//You may want to refactor this, as in renderTemplate, but this is how template inheritance works in Go
+	s1, _ := template.ParseFiles("templates/base.tmpl", "templates/index.tmpl")
+	s1.ExecuteTemplate(w, "base", map[string]string{"APP_ID": APP_ID})
+}
+
 func serveProfile(w http.ResponseWriter, r *http.Request, c *Credentials) {
 	fmt.Fprint(w, "This is where the user's profile information goes!")
 	return
@@ -113,8 +124,7 @@ func serveLogin(w http.ResponseWriter, r *http.Request) {
 			full_user, err := comparePassword(email, password)
 			if err != nil {
 				log.Printf("Error fetching user: %v", err)
-				s1, _ := template.ParseFiles("templates/base.tmpl", "templates/login.tmpl")
-				s1.ExecuteTemplate(w, "base", "Error fetching user")
+				renderTemplate(w, "base", "Error fetching user", "templates/base.tmpl", "templates/login.tmpl")
 				return
 			}
 
@@ -125,11 +135,6 @@ func serveLogin(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
-}
-
-func renderTemplate(w http.ResponseWriter, name string, data interface{}, filenames ...string) {
-	s1, _ := template.ParseFiles(filenames...)
-	s1.ExecuteTemplate(w, name, data)
 }
 
 //Fetch the user from the database and check if the passwords match
@@ -154,8 +159,8 @@ func serveRegister(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		{
-			s1, _ := template.ParseFiles("templates/base.tmpl", "templates/register.tmpl")
-			s1.ExecuteTemplate(w, "base", nil)
+			renderTemplate(w, "base", nil, "templates/base.tmpl", "templates/register.tmpl")
+			return
 		}
 
 	case "POST":
@@ -197,12 +202,6 @@ func serveRegister(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func serveHome(w http.ResponseWriter, r *http.Request) {
-	//You may want to refactor this, as in renderTemplate, but this is how template inheritance works in Go
-	s1, _ := template.ParseFiles("templates/base.tmpl", "templates/index.tmpl")
-	s1.ExecuteTemplate(w, "base", map[string]string{"APP_ID": APP_ID})
-}
-
 func main() {
 	var err error
 
@@ -222,7 +221,7 @@ func main() {
 	r.HandleFunc("/callback", serveCallback).Methods("GET")
 	r.HandleFunc("/register", serveRegister)
 	r.HandleFunc("/login", serveLogin)
-	r.Handle("/profile", &authHandler{serveProfile, false})
+	r.Handle("/profile", &authHandler{serveProfile, false}).Methods("GET")
 	http.Handle("/static/", http.FileServer(http.Dir("public")))
 	http.Handle("/", r)
 
