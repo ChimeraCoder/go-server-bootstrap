@@ -2,11 +2,14 @@ package main
 
 import (
 	"labix.org/v2/mgo"
+	"os"
 )
 
 var (
 	mongodb_session *mgo.Session
 
+	MONGODB_URL      = os.Getenv("MONGODB_URL")
+	MONGODB_DATABASE = os.Getenv("MONGODB_DATABASE")
 	//Required in conf.go
 	//MONGODB_URL string
 	//MONGODB_DATABASE string

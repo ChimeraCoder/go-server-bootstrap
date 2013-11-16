@@ -14,6 +14,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"text/template"
 )
 
@@ -29,12 +30,10 @@ var (
 
 	//The following three variables can be defined using environment variables
 	//to avoid committing them by mistake
-	//Alternatively, place variable declarations in a separate conf.go file
-	//which is already in the .gitignore file
 
-	//COOKIE_SECRET = []byte(os.Getenv("COOKIE_SECRET"))
-	//APP_ID = os.Getenv("APP_ID")
-	//APP_SECRET = os.Getenv("APP_SECRET")
+	COOKIE_SECRET = []byte(os.Getenv("COOKIE_SECRET"))
+	APP_ID        = os.Getenv("APP_ID")
+	APP_SECRET    = os.Getenv("APP_SECRET")
 )
 
 func renderTemplate(w http.ResponseWriter, name string, data interface{}, filenames ...string) {
