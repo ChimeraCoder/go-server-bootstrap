@@ -14,26 +14,20 @@ Setup
 
 Assuming you already have a working installation of a Go compiler (either gc or gccgo), you simply need to define the OAuth credentials and cookie secret. 
 
-If you want to define these as environment variables (ie, export APP_ID=YOURAPPID), simply create a file named `conf.go` with the following contents:
+If you want to define these as environment variables (ie, export APP_ID=YOURAPPID), simply define the following environment variables:
 
-````go
-package main
-
-import "os"
-
-var COOKIE_SECRET = []byte(os.Getenv("COOKIE_SECRET"))
-var APP_ID = os.Getenv("APP_ID")
-var APP_SECRET = os.Getenv("APP_SECRET")
+````sh
+export COOKIE_SECRET = "something secret"
+export APP_ID = "your clef app ID"
+export APP_SECRET = "your clef app secret" 
+export MONGODB_URL= "your mongodb url (without the mongodb:// prefix)"
+export MONGODB_DATABASE = "the name of the mongodb database
 ````
 
-You can also simply hard-code the strings in the conf.go file instead; this file has not been included in the repository because it is already in the .gitignore file, to avoid committing your credentials by mistake.
+You can also simply hard-code the definitions of the variables in a file named `conf.go` file instead; this file has not been included in the repository because it is already in the .gitignore file, to avoid committing your credentials by mistake.
 
 
-A Makefile has been included so you can compile and run easily:
-
-````
-    $ make && ./build/a.out
-````
+You can compile and run easily using the `go run` command. Alternatively, use `go install` to compile an executable and install it to `$GOPATH/bin` (you will probably want to add this to your `$PATH` for convenience)
 
 
 This library has been tested using gc, though it should work with gccgo as well.
